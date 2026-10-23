@@ -14,7 +14,7 @@ export function renderLoading(app) {
         <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           ${Array.from({ length: 8 }, () => `
             <div class="animate-pulse rounded-xl bg-white p-5 shadow">
-              <div class="mx-auto h-48 w-32 rounded bg-slate-200"></div>
+              <div class="h-48 rounded-lg bg-slate-200"></div>
               <div class="mt-4 h-4 rounded bg-slate-200"></div>
               <div class="mt-3 h-4 w-1/2 rounded bg-slate-200"></div>
             </div>
@@ -38,8 +38,7 @@ export function renderError(app, message) {
 
   const status = document.createElement('p')
   status.className = 'mt-4 text-red-700'
-  status.setAttribute('role', 'status')
-  status.setAttribute('aria-live', 'polite')
+  status.setAttribute('role', 'alert')
   status.textContent = `Sorry, we couldn't load the books: ${message}`
 
   const retry = document.createElement('button')
@@ -66,8 +65,18 @@ export function render(state, app) {
 
   const query = (state.query ?? '').trim().toLowerCase()
 
+  const categories = [...new Set(
+    state.items.flatMap((book) => book.subjects ?? [])
+  )].sort((a, b) => a.localeCompare(b))
+
   const books = state.items
-    .filter(({ title }) => title.toLowerCase().includes(query))
+    .filter((book) =>
+      book.title.toLowerCase().includes(query)
+    )
+    .filter((book) =>
+      state.category === 'all' ||
+      (book.subjects ?? []).includes(state.category)
+    )
     .toSorted((a, b) => {
       if (state.sort === 'newest') {
         const yearA = Number(a.year) || 0
@@ -83,27 +92,37 @@ export function render(state, app) {
     })
 
   app.innerHTML = `
-    <main class="min-h-screen bg-slate-100 p-6">
+    <main class="min-h-screen bg-slate-100 p-6 sm:p-8">
       <div class="mx-auto max-w-6xl">
-        <h1 class="text-3xl font-bold text-slate-900">
-          Open Library Book Explorer
-        </h1>
+        <header>
+          <p class="font-semibold uppercase tracking-widest text-indigo-600">
+            Discover your next read
+          </p>
 
-        <p class="mt-2 text-slate-600">
-          Discover books, authors, and publication years.
-        </p>
+          <h1 class="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
+            Open Library Book Explorer
+          </h1>
 
-        <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <p class="mt-3 text-slate-600">
+            Explore books, authors, publication years, and subjects.
+          </p>
+        </header>
+
+        <section
+          class="mt-8 grid grid-cols-1 gap-4 rounded-2xl bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-3"
+          aria-label="Book search and filters"
+        >
           <div>
             <label for="book-search" class="mb-2 block font-medium text-slate-700">
-              Search books by title
+              Search by title
             </label>
+
             <input
               id="book-search"
               type="search"
-              placeholder="Search the loaded books..."
-              class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search loaded books..."
               value="${escapeHTML(state.query ?? '')}"
+              class="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
@@ -111,49 +130,101 @@ export function render(state, app) {
             <label for="book-sort" class="mb-2 block font-medium text-slate-700">
               Sort books
             </label>
+
             <select
               id="book-sort"
-              class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="title" ${state.sort === 'title' ? 'selected' : ''}>
                 Title: A–Z
               </option>
+
               <option value="newest" ${state.sort === 'newest' ? 'selected' : ''}>
                 Newest publication year
               </option>
             </select>
           </div>
-        </div>
 
-        <p class="mt-4 text-slate-700" role="status" aria-live="polite">
-          Showing ${books.length} of ${state.items.length} books
-        </p>
+          <div>
+            <label for="book-category" class="mb-2 block font-medium text-slate-700">
+              Filter by subject
+            </label>
+
+            <select
+              id="book-category"
+              class="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all" ${state.category === 'all' ? 'selected' : ''}>
+                All subjects
+              </option>
+
+              ${categories.map((category) => `
+                <option
+                  value="${escapeHTML(category)}"
+                  ${state.category === category ? 'selected' : ''}
+                >
+                  ${escapeHTML(category)}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+        </section>
+
+        <div class="mt-6 flex items-center justify-between">
+          <p class="text-slate-700" role="status" aria-live="polite">
+            Showing <strong>${books.length}</strong> of ${state.items.length} books
+          </p>
+        </div>
 
         ${
           books.length === 0
-            ? `<p class="mt-8 rounded-xl bg-white p-8 text-center text-slate-600">
-                 No books found. Try another search.
-               </p>`
+            ? `
+              <div class="mt-8 rounded-2xl bg-white p-10 text-center shadow-sm">
+                <p class="text-4xl" aria-hidden="true">📚</p>
+                <h2 class="mt-4 text-xl font-semibold text-slate-900">
+                  No books found
+                </h2>
+                <p class="mt-2 text-slate-600">
+                  Try another title or select a different subject.
+                </p>
+              </div>
+            `
             : `
-              <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <section
+                class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                aria-label="Books"
+              >
                 ${books.map(({ id, title, author, year, coverId }) => `
                   <article
-                    class="rounded-xl bg-white p-5 shadow transition hover:-translate-y-1 hover:shadow-lg"
+                    class="overflow-hidden rounded-2xl bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                   >
-                    ${
-                      coverId
-                        ? `<img
-                            src="https://covers.openlibrary.org/b/id/${Number(coverId)}-M.jpg"
-                            alt="Cover of ${escapeHTML(title)}"
-                            loading="lazy"
-                            class="mx-auto h-48 w-full rounded-lg object-contain"
-                          />`
-                        : `<div class="flex h-48 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                             No cover available
-                           </div>`
-                    }
+                    <div class="relative flex h-48 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100">
+                      ${
+                        coverId
+                          ? `
+                            <img
+                              src="https://covers.openlibrary.org/b/id/${Number(coverId)}-M.jpg?default=false"
+                              alt="Cover of ${escapeHTML(title)}"
+                              loading="lazy"
+                              class="h-full w-full object-contain"
+                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+                            />
+                          `
+                          : ''
+                      }
 
-                    <h2 class="mt-4 font-semibold text-slate-900">
+                      <div
+                        class="${coverId ? 'hidden' : 'flex'} absolute inset-0 flex-col items-center justify-center p-4 text-center text-indigo-800"
+                        style="${coverId ? 'display:none' : ''}"
+                        aria-label="No book cover available"
+                      >
+                        <span class="text-5xl" aria-hidden="true">📚</span>
+                        <span class="mt-3 font-semibold">Book Cover</span>
+                        <span class="mt-1 text-sm">No cover available</span>
+                      </div>
+                    </div>
+
+                    <h2 class="mt-4 font-semibold leading-6 text-slate-900">
                       ${escapeHTML(title)}
                     </h2>
 
@@ -161,14 +232,26 @@ export function render(state, app) {
                       ${escapeHTML(author)}
                     </p>
 
-                    <p class="mt-2 text-sm text-slate-500">
-                      Published: ${escapeHTML(year)}
+                    <p class="mt-3 text-sm text-slate-500">
+                      Publication year: ${escapeHTML(year)}
                     </p>
                   </article>
                 `).join('')}
-              </div>
+              </section>
             `
         }
+
+        <footer class="mt-10 border-t border-slate-200 py-6 text-center text-sm text-slate-500">
+          Book data provided by
+          <a
+            href="https://openlibrary.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-medium text-indigo-600 underline"
+          >
+            Open Library
+          </a>
+        </footer>
       </div>
     </main>
   `

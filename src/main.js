@@ -11,6 +11,7 @@ const state = {
   error: null,
   query: '',
   sort: 'title',
+  category: 'all',
 }
 
 async function loadBooks() {
@@ -23,23 +24,23 @@ async function loadBooks() {
     state.status = 'success'
   } catch (error) {
     state.status = 'error'
-    state.error = error.message
+    state.error = error.message || 'An unexpected error occurred.'
   }
 
   render(state, app)
 }
 
 app.addEventListener('input', (event) => {
-  if (event.target.id === 'book-search') {
-    state.query = event.target.value
+  if (event.target.id !== 'book-search') return
 
-    const cursorPosition = event.target.selectionStart
-    render(state, app)
+  state.query = event.target.value
+  const cursorPosition = event.target.selectionStart
 
-    const searchInput = app.querySelector('#book-search')
-    searchInput?.focus()
-    searchInput?.setSelectionRange(cursorPosition, cursorPosition)
-  }
+  render(state, app)
+
+  const searchInput = app.querySelector('#book-search')
+  searchInput?.focus()
+  searchInput?.setSelectionRange(cursorPosition, cursorPosition)
 })
 
 app.addEventListener('change', (event) => {
@@ -47,12 +48,15 @@ app.addEventListener('change', (event) => {
     state.sort = event.target.value
     render(state, app)
   }
+
+  if (event.target.id === 'book-category') {
+    state.category = event.target.value
+    render(state, app)
+  }
 })
 
 app.addEventListener('click', (event) => {
-  const retryButton = event.target.closest('#retry-button')
-
-  if (retryButton) {
+  if (event.target.closest('#retry-button')) {
     loadBooks()
   }
 })

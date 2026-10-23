@@ -18,7 +18,7 @@ export async function getBooks(query = 'javascript') {
 
   return data.docs.map((book) => ({
     id: book.key,
-    title: book.title,
+    title: book.title ?? 'Untitled book',
     author: book.author_name?.join(', ') ?? 'Unknown author',
     year: book.first_publish_year ?? 'Year unknown',
     coverId: book.cover_i ?? null,
