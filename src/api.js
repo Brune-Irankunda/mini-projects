@@ -26,6 +26,36 @@ export async function getBooks(query = 'javascript') {
   }))
 }
 
+// Promise.all(): all requests must succeed.
+export async function getMultipleBookLists() {
+  const [javascriptBooks, pythonBooks] = await Promise.all([
+    getBooks('javascript'),
+    getBooks('python'),
+  ])
+
+  return {
+    javascriptBooks,
+    pythonBooks,
+  }
+}
+
+// Promise.allSettled(): inspect every request, even if one fails.
+export async function getBookListsSafely() {
+  const results = await Promise.allSettled([
+    getBooks('javascript'),
+    getBooks('python'),
+  ])
+
+  return results.map((result, index) => ({
+    query: index === 0 ? 'javascript' : 'python',
+    status: result.status,
+    books: result.status === 'fulfilled' ? result.value : [],
+    error: result.status === 'rejected'
+      ? result.reason.message
+      : null,
+  }))
+}
+
 export async function getBookDetails(id) {
   return getJSON(`${BASE_URL}${id}.json`)
 }

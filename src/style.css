@@ -7,3 +7,107 @@ body {
   min-height: 100vh;
   font-family: Arial, sans-serif;
 }
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f3f4f6;
+  color: #1f2937;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  color: #6d28d9;
+  font-size: 32px;
+}
+
+.controls,
+.api-status,
+.book-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.controls input,
+.controls select {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.book-card img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+.book-card h2 {
+  font-size: 18px;
+}
+
+button {
+  padding: 10px 14px;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #5b21b6;
+}
+
+.no-cover {
+  height: 220px;
+  display: grid;
+  place-items: center;
+  background: #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.empty-state,
+.loading-message,
+.error-message {
+  padding: 20px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 14px;
+  }
+
+  .page-header h1 {
+    font-size: 26px;
+  }
+}
